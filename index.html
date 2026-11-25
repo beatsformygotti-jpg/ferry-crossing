@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#153931">
   <meta name="description" content="Уравновесь паром и перевези весь груз одним рейсом. 50 уровней, от тихой заводи до дальнего берега.">
   <title>Паром на два берега</title>
-  <link rel="stylesheet" href="style.css?v=river">
+  <link rel="stylesheet" href="style.css?v=pier">
   <script defer src="rules.js"></script>
   <script defer src="levels.js"></script>
   <script defer src="lang.js?v=river"></script>
-  <script defer src="game.js?v=open-levels"></script>
+  <script defer src="game.js?v=perspective"></script>
 </head>
 <body>
   <main class="device">
@@ -19,7 +19,6 @@
       <section id="menu" class="view home" aria-labelledby="home-title">
         <div class="home-copy">
           <div class="home-name">
-            <div class="harbor-mark" aria-hidden="true"><i></i><i></i><i></i></div>
             <h1 id="home-title"><span data-t="titleA">Паром на</span><span data-t="titleB">два берега</span></h1>
             <p data-t="tagline">Весь груз. Один рейс.</p>
           </div>
@@ -72,15 +71,15 @@
           <div class="gangway" aria-hidden="true"></div>
           <div class="ferry-motion" id="ferry-motion">
             <div class="ferry" id="ferry">
+              <div class="ferry-shadow" aria-hidden="true"></div>
               <div class="ferry-side" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-              <div class="ferry-hull" aria-hidden="true"></div>
-              <div class="ferry-trim" aria-hidden="true"></div>
               <div class="deck-frame">
+                <div class="ferry-hull" aria-hidden="true"></div>
                 <div class="arms" id="arms" aria-hidden="true"></div>
                 <div class="deck" id="deck" data-a="deck"></div>
-                <div class="cabin" aria-hidden="true"><div class="cabin-window"></div><div class="cabin-flag"><i></i></div></div>
                 <div class="placed-cargo" id="placed"></div>
               </div>
+              <div class="cabin" aria-hidden="true"><div class="cabin-window"></div><div class="cabin-flag"><i></i></div></div>
             </div>
           </div>
           <div id="trip-status" class="trip-status" role="status" hidden></div>

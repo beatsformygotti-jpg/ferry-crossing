@@ -304,7 +304,8 @@
     $('compare').textContent = state.left === state.right ? '=' : state.left > state.right ? '>' : '<';
     $('gauges').classList.toggle('balanced', state.ready);
     $('gauges').classList.toggle('unbalanced', imbalance !== 0);
-    $('ferry').style.setProperty('--heel', Math.max(-7,Math.min(7,imbalance * .69)) + 'deg');
+    const heelLimit = level.rows === 4 ? 3 : level.rows === 3 ? 5 : 7;
+    $('ferry').style.setProperty('--heel', Math.max(-heelLimit,Math.min(heelLimit,imbalance * .69)) + 'deg');
     $('ferry-motion').className = 'ferry-motion' + (phase === 'depart' || phase === 'delivered' ? ' depart' : phase === 'arrive' ? ' arrive' : '');
     $('playfield').classList.toggle('motion', Boolean(phase));
     $('trip-status').hidden = !phase;
@@ -575,14 +576,7 @@
   }
 
   function cellAt(clientX, clientY) {
-    const node = document.elementFromPoint(clientX,clientY);
-    if (!node || !node.closest('#playfield')) return null;
-    const direct = node.closest('[data-cell]');
-    if (direct) return direct;
-    return [...$('deck').children].find(el => {
-      const r = bounds(el);
-      return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
-    });
+    return document.elementsFromPoint(clientX,clientY).find(node => node.matches('#deck [data-cell]')) || null;
   }
 
   function paintPreview(cell, id, direction) {
