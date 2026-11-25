@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#181228">
+  <meta name="description" content="Уравновесь паром и перевези весь груз одним рейсом. 50 уровней, от тихой заводи до дальнего берега.">
+  <title>Паром на два берега</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="rules.js"></script>
+  <script defer src="levels.js"></script>
+  <script defer src="lang.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <main class="device">
+    <div class="screen" id="screen">
+      <span class="lens" aria-hidden="true"></span>
+      <section id="menu" class="view home" aria-labelledby="home-title">
+        <div class="home-scene" aria-hidden="true">
+          <div class="home-lights"></div>
+          <div class="home-ferry">
+            <div class="mini-rim"></div><div class="mini-spine"><i></i><i></i></div>
+            <div class="mini-deck"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="home-cargo one">2</div><div class="home-cargo two">1</div><div class="home-cargo three">1</div>
+          </div>
+        </div>
+        <div class="home-name">
+          <h1 id="home-title"><span data-t="titleA">Паром</span><span data-t="titleB">на два берега</span></h1>
+          <p data-t="tagline">Весь груз. Один рейс.</p>
+        </div>
+        <div class="home-actions">
+          <button class="station primary" id="continue" data-t="continue">Продолжить</button>
+          <button class="station" id="new" data-t="newGame">Новая игра</button>
+          <button class="station" id="map-action" data-t="chooseLevel">Выбрать уровень</button>
+          <div class="home-options">
+            <div class="lang" data-a="language">
+              <button type="button" data-lang="ru" aria-label="Русский">RU</button><button type="button" data-lang="en" aria-label="English">EN</button>
+            </div>
+            <button class="quiet" id="sound" data-a="sound" title="Звук">♫</button>
+            <button class="quiet" id="home-help" data-a="help" title="Правила">?</button>
+          </div>
+        </div>
+        <p id="home-progress" class="home-progress"></p>
+      </section>
+      <section id="map" class="view map" aria-labelledby="map-title" hidden>
+        <header class="map-top">
+          <button class="quiet" id="map-back" data-t="back">Назад</button>
+          <h1 id="map-title" data-t="chooseLevel">Выбрать уровень</h1>
+          <span class="star-total" id="map-stars"></span>
+        </header>
+        <div class="map-content">
+          <div class="chapter-tabs" id="chapters" data-a="chapters"></div>
+          <div class="chapter-name"><h2 id="chapter-title"></h2><p id="chapter-size"></p></div>
+          <div class="level-grid" id="levels"></div>
+        </div>
+        <p class="map-note" id="map-note"></p>
+      </section>
+      <section id="game" class="view game" aria-labelledby="level-title" hidden>
+        <header class="hud">
+          <button class="quiet pause" id="pause" data-a="pause" title="Пауза" aria-label="Пауза"><b aria-hidden="true">Ⅱ</b></button>
+          <div class="level-id"><span id="level-number"></span><strong id="level-title"></strong></div>
+          <div class="gauges" id="gauges" role="status">
+            <span class="gauge"><span data-t="left">Левый</span><b id="left">0</b></span>
+            <strong class="compare" id="compare">=</strong>
+            <span class="gauge"><b id="right">0</b><span data-t="right">Правый</span></span>
+          </div>
+          <div class="game-actions">
+            <button class="quiet compact" id="undo" data-a="undo" aria-label="Отменить ход"><b aria-hidden="true">↶</b></button>
+            <button class="quiet compact" id="hint" data-a="hint" aria-label="Подсказка"><b aria-hidden="true">?</b></button>
+            <button class="station sail" id="sail" data-t="sail">Отплыть</button>
+          </div>
+        </header>
+        <div id="playfield" class="playfield">
+          <div class="water-lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="quay" aria-hidden="true"></div>
+          <div class="gangway" aria-hidden="true"></div>
+          <div class="ferry-motion" id="ferry-motion">
+            <div class="ferry" id="ferry">
+              <div class="ferry-hull" aria-hidden="true"></div>
+              <div class="ferry-trim" aria-hidden="true"></div>
+              <div class="deck-frame">
+                <div class="arms" id="arms" aria-hidden="true"></div>
+                <div class="deck" id="deck" data-a="deck"></div>
+                <div class="cabin" aria-hidden="true"><div class="cabin-window"></div><div class="cabin-light"></div></div>
+                <div class="placed-cargo" id="placed"></div>
+              </div>
+            </div>
+          </div>
+          <div id="trip-status" class="trip-status" role="status" hidden></div>
+        </div>
+        <aside class="brief" id="brief" aria-live="polite">
+          <p id="message"></p>
+          <p id="contract"></p>
+        </aside>
+        <footer class="dock">
+          <div class="dock-label"><strong data-t="dock">Пристань</strong><span id="cargo-count"></span></div>
+          <button class="quiet dock-scroll" id="dock-prev" data-a="dockPrev"><span aria-hidden="true">‹</span></button>
+          <div class="dock-track" id="dock" data-a="dock"></div>
+          <button class="quiet dock-scroll" id="dock-next" data-a="dockNext"><span aria-hidden="true">›</span></button>
+          <div class="dock-tools">
+            <button class="tool" id="rotate" data-t="rotate">↻ Повернуть</button>
+            <button class="tool" id="remove" data-t="remove">Снять</button>
+            <button class="tool ballast" id="ballast" data-t="ballast">Балласт</button>
+          </div>
+        </footer>
+      </section>
+      <dialog id="dialog" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+    </div>
+  </main>
+  <section class="rotate-screen" aria-labelledby="turn-phone">
+    <div aria-hidden="true" class="turn-symbol">↻</div>
+    <h2 id="turn-phone" data-t="turnPhone">Поверни телефон</h2>
+    <p data-t="turnTip">Четыре ряда палубы помещаются на горизонтальном экране.</p>
+    <div class="lang" data-a="language">
+      <button type="button" data-lang="ru" aria-label="Русский">RU</button><button type="button" data-lang="en" aria-label="English">EN</button>
+    </div>
+  </section>
+</body>
+</html>
