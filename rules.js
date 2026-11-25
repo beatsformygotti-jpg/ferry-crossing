@@ -21,14 +21,40 @@
     return occupied;
   }
 
+  function canLift(level, placements, id, occupied = inventory(level, placements)) {
+    return cellsFor(level.cargo[id], placements[id]).every(([x, y]) => {
+      const above = occupied.get(cellKey(x, y + 1));
+      return above === undefined || above === id;
+    });
+  }
+
   function fits(level, placements, id, place) {
     const occupied = inventory(level, placements);
-    for (const [x, y] of cellsFor(level.cargo[id], place)) {
+    if (!canLift(level, placements, id, occupied)) return false;
+    const footprint = cellsFor(level.cargo[id], place);
+    const own = new Set(footprint.map(([x, y]) => cellKey(x, y)));
+    return footprint.every(([x, y]) => {
       if (x === 0 || Math.abs(x) > level.columns || y < 0 || y >= level.rows) return false;
       const previous = occupied.get(cellKey(x, y));
       if (previous !== undefined && previous !== id) return false;
+      const below = cellKey(x, y - 1);
+      const support = occupied.get(below);
+      return y === 0 || own.has(below) || (support !== undefined && support !== id);
+    });
+  }
+
+  function loadingOrder(level, placements) {
+    const built = empty(level);
+    const pending = placements.map((place, id) => place ? id : null).filter(id => id !== null);
+    const order = [];
+    while (pending.length) {
+      const available = pending.findIndex(id => fits(level, built, id, placements[id]));
+      if (available < 0) return null;
+      const [id] = pending.splice(available, 1);
+      built[id] = placements[id];
+      order.push(id);
     }
-    return true;
+    return order;
   }
 
   function inspect(level, placements, ballast = 0) {
@@ -82,54 +108,32 @@
     return state.full && state.cleanCargo && Math.abs(state.left - state.right) === 1;
   }
 
-  function reflect(level, anchors, horizontal, vertical) {
-    return anchors.map((p, id) => {
-      const long = level.cargo[id].kind === 'long';
-      return [
-        horizontal ? -p[0] - Number(long && p[2] === 0) : p[0],
-        vertical ? level.rows - 1 - p[1] - Number(long && p[2] === 1) : p[1],
-        p[2],
-      ];
-    });
-  }
+  function hint(level, placements) {
+    const target = level.solution;
+    const targetDeck = inventory(level, target);
+    const order = target.map((_, id) => id).sort((a, b) => target[a][1] - target[b][1]);
+    const settled = new Set();
 
-  function variants(level, placements) {
-    const groups = new Map();
-    level.cargo.forEach((c, id) => {
-      const contractId = level.contract?.kind === 'mark' ? level.contract.id : -1;
-      const group = c.pair || id === contractId ? 'id:' + id : c.kind + ':' + c.weight;
-      if (!groups.has(group)) groups.set(group, []);
-      groups.get(group).push(id);
-    });
-    return [[false, false], [true, false], [false, true], [true, true]].map(([h, v]) => {
-      const reflected = reflect(level, level.solution, h, v);
-      const result = [];
-      for (const ids of groups.values()) {
-        const open = ids.map(id => reflected[id]);
-        for (const id of ids) {
-          const matched = open.findIndex(p => same(p, placements[id]));
-          if (matched < 0) continue;
-          result[id] = open.splice(matched, 1)[0];
-        }
-        for (const id of ids) if (!result[id]) result[id] = open.shift();
-      }
-      return result;
-    });
-  }
-
-  function hint(level, placements, aimForContract = false) {
-    let options = variants(level, placements);
-    if (aimForContract) options = options.filter(option => inspect(level, option).contractMet);
-    const score = candidate => candidate.reduce((n, place, id) => n + Number(placements[id] && !same(place, placements[id])), 0) * 2
-      + (level.contract && !inspect(level, candidate).contractMet ? 1 : 0);
-    options.sort((a, b) => score(a) - score(b));
-    const target = options[0];
-    for (let id = 0; id < target.length; id++) {
-      if (same(target[id], placements[id])) continue;
-      if (fits(level, placements, id, target[id])) return { id, place: target[id] };
+    function hasSupports(id) {
+      return cellsFor(level.cargo[id], target[id]).every(([x, y]) => {
+        if (y === 0) return true;
+        const support = targetDeck.get(cellKey(x, y - 1));
+        return support === id || settled.has(support);
+      });
     }
-    const id = target.findIndex((place, i) => placements[i] && !same(place, placements[i]));
-    return id < 0 ? null : { id, place: null };
+
+    for (const id of order) {
+      if (same(placements[id], target[id]) && hasSupports(id)) settled.add(id);
+    }
+    // Follow the reference loading order without removing crates already resting on it.
+    for (const id of order) {
+      if (!settled.has(id) && hasSupports(id) && fits(level, placements, id, target[id])) {
+        return { id, place: target[id] };
+      }
+    }
+    const occupied = inventory(level, placements);
+    const top = order.reverse().find(id => !settled.has(id) && placements[id] && canLift(level, placements, id, occupied));
+    return top === undefined ? null : { id: top, place: null };
   }
 
   function starCount(level, result, adjustments, ballast) {
@@ -137,7 +141,7 @@
     return !result.contractMet ? 1 : adjustments || ballast ? 2 : 3;
   }
 
-  const api = { cellsFor, fits, inspect, hint, empty, same, canBallast, starCount, cellKey };
+  const api = { cellsFor, fits, canLift, loadingOrder, inspect, hint, empty, same, canBallast, starCount, cellKey };
   if (typeof module === 'object') module.exports = api;
   else window.FerryRules = api;
 })();

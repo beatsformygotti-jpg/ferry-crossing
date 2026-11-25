@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#153931">
   <meta name="description" content="Уравновесь паром и перевези весь груз одним рейсом. 50 уровней, от тихой заводи до дальнего берега.">
   <title>Паром на два берега</title>
-  <link rel="stylesheet" href="style.css?v=pier">
-  <script defer src="rules.js"></script>
-  <script defer src="levels.js"></script>
-  <script defer src="lang.js?v=river"></script>
-  <script defer src="game.js?v=perspective"></script>
+  <link rel="stylesheet" href="style.css?v=stacks">
+  <script defer src="rules.js?v=stacks"></script>
+  <script defer src="levels.js?v=stacks"></script>
+  <script defer src="lang.js?v=stacks"></script>
+  <script defer src="vessel.js?v=stacks"></script>
+  <script defer src="game.js?v=stacks"></script>
 </head>
 <body>
   <main class="device">
@@ -71,15 +72,12 @@
           <div class="gangway" aria-hidden="true"></div>
           <div class="ferry-motion" id="ferry-motion">
             <div class="ferry" id="ferry">
-              <div class="ferry-shadow" aria-hidden="true"></div>
-              <div class="ferry-side" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              <canvas id="vessel-art" class="vessel-art" aria-hidden="true"></canvas>
               <div class="deck-frame">
-                <div class="ferry-hull" aria-hidden="true"></div>
                 <div class="arms" id="arms" aria-hidden="true"></div>
                 <div class="deck" id="deck" data-a="deck"></div>
                 <div class="placed-cargo" id="placed"></div>
               </div>
-              <div class="cabin" aria-hidden="true"><div class="cabin-window"></div><div class="cabin-flag"><i></i></div></div>
             </div>
           </div>
           <div id="trip-status" class="trip-status" role="status" hidden></div>

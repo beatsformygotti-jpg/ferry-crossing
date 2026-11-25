@@ -210,16 +210,12 @@ button:focus-visible { outline: 2px solid #9e5532; outline-offset: 3px; }
 .hud button:focus-visible, .deck button:focus-visible { outline-color: #ffe2a4; }
 .playfield {
   --gap: 3px;
-  --deck-inset: 18px;
-  --pitch: 39deg;
-  --projection: .777;
-  --hull-depth: clamp(26px, 4.7cqw, 37px);
-  --cell: max(25px, min(65px, calc((100cqh - var(--deck-inset) - 3px * (var(--rows) - 1)) / var(--rows)), calc((100cqw - 102px) / (2 * var(--columns) + 1))));
-  --spine: calc(var(--cell) * .72);
-  --tracks: repeat(var(--columns), var(--cell)) var(--spine) repeat(var(--columns), var(--cell));
-  --height: calc(var(--cell) * var(--rows) + var(--gap) * (var(--rows) - 1));
-  --seen-deck: calc(var(--height) * var(--projection));
-  --width: calc(var(--cell) * 2 * var(--columns) + var(--spine) + var(--gap) * (var(--columns) * 2));
+  --tier: max(22px, min(51px, calc((100cqh - 55px - var(--gap) * (var(--rows) - 1)) / var(--rows))));
+  --bay: max(23px, min(var(--bay-cap, 52px), calc((100cqw - 86px) / (2 * var(--columns) + 1))));
+  --spine: max(26px, calc(var(--bay) * .89));
+  --tracks: repeat(var(--columns), var(--bay)) var(--spine) repeat(var(--columns), var(--bay));
+  --height: calc(var(--tier) * var(--rows) + var(--gap) * (var(--rows) - 1));
+  --width: calc(var(--bay) * 2 * var(--columns) + var(--spine) + var(--gap) * (var(--columns) * 2));
   position: relative; display: grid; place-items: center; min-height: 0;
   container-name: river; container-type: size;
   isolation: isolate; overflow: hidden;
@@ -238,7 +234,7 @@ button:focus-visible { outline: 2px solid #9e5532; outline-offset: 3px; }
   border-top: 2px solid #e5ba83;
 }
 .gangway {
-  position: absolute; bottom: -3px; left: 50%; width: 39px; height: max(9px, calc((100cqh - var(--seen-deck) - var(--hull-depth)) * .5 + 2px)); z-index: -1;
+  position: absolute; bottom: -3px; left: 50%; width: 39px; height: max(9px, calc((100cqh - var(--height)) * .5 - 5px)); z-index: -1;
   border: 1px solid #77523a; border-radius: 4px; transform-origin: center bottom; transform: translateX(-50%);
   transition: transform 280ms;
   background: repeating-linear-gradient(0deg, #896246 0 2px, #c09064 3px 8px);
@@ -246,58 +242,32 @@ button:focus-visible { outline: 2px solid #9e5532; outline-offset: 3px; }
 }
 .playfield.motion .gangway { transform: translateX(-50%) scaleY(.19); }
 .ferry-motion {
-  position: relative; z-index: 1; margin-top: 7px; transform-origin: center;
+  position: relative; z-index: 1; margin-top: -25px; transform-origin: center;
 }
 .ferry-motion.arrive { animation: arrive 590ms cubic-bezier(.12,.66,.24,1) both; }
 .ferry-motion.depart { animation: depart 830ms cubic-bezier(.42,.08,.67,.56) both; }
 @keyframes arrive { from { transform: translate(-165%, -5%) scale(.91); opacity: .45; } to { transform: translate(0); } }
 @keyframes depart { to { transform: translate(170%, -13%) scale(.91); opacity: .5; } }
 .ferry {
-  position: relative; width: var(--width); height: calc(var(--seen-deck) + var(--hull-depth));
-  transform: rotate(var(--heel,0deg)); transform-origin: 50% 82%;
+  position: relative; width: var(--width); height: var(--height);
+  transform: rotate(var(--heel,0deg)); transform-origin: 50% 100%;
   transition: transform 250ms cubic-bezier(.2,.78,.31,1.1);
 }
-.ferry-shadow {
-  position: absolute; left: -26px; right: -40px; bottom: -8px; height: 15px;
-  border-radius: 50%; background: #254e4580; transform: skewX(-9deg);
+.vessel-art {
+  position: absolute; inset: -35px -40px -45px;
+  width: calc(100% + 80px); height: calc(100% + 80px);
+  pointer-events: none;
 }
-.ferry-side {
-  position: absolute; left: -18px; right: -28px; top: calc(var(--seen-deck) - 3px);
-  height: calc(var(--hull-depth) + 3px);
-  display: flex; justify-content: space-evenly; align-items: center;
-  border-radius: 2% 3% 19% 16% / 5% 8% 100% 90%;
-  border-top: 3px solid #d8ac76;
-  background: linear-gradient(#e07a5d 0 25%, #b95e4e 25% 28%, #254a4d 29% 77%, #1d4145 84%);
-  box-shadow: inset 0 -3px #17393e79, 0 4px 0 #26585042;
-}
-.ferry-side i {
-  width: 7px; height: 6px; margin-top: 6px; border-radius: 50%; background: #8ca9a0;
-  box-shadow: 0 1px 0 #17393b;
-}
-.ferry-hull {
-  position: absolute; inset: -7px -16px -3px -14px; z-index: -1;
-  border-radius: 17% 20% 12% 8% / 32% 38% 18% 14%;
-  border: 2px solid #f2ce91;
-  background:
-    repeating-linear-gradient(0deg, #8463455e 0 1px, transparent 1px 12px),
-    linear-gradient(160deg, #bf9167, #966d4b);
-  box-shadow: inset 0 0 0 2px #a8734d, inset 0 0 0 4px #d8ad8095;
-}
-.deck-frame {
-  position: absolute; z-index: 1;
-  top: calc((var(--seen-deck) - var(--height)) * .5);
-  width: var(--width); height: var(--height);
-  transform: perspective(1500px) rotateX(var(--pitch)); transform-style: preserve-3d;
-}
+.deck-frame { position: relative; width: var(--width); height: var(--height); }
 .deck, .placed-cargo, .arms {
   position: absolute; inset: 0;
   display: grid; grid-template-columns: var(--tracks);
-  grid-template-rows: repeat(var(--rows), var(--cell));
+  grid-template-rows: repeat(var(--rows), var(--tier));
   gap: var(--gap);
 }
-.placed-cargo { pointer-events: none; transform-style: preserve-3d; }
+.placed-cargo { pointer-events: none; }
 .arms {
-  inset: auto 0 calc(100% - 4px);
+  inset: calc(100% + 11px) 0 auto;
   grid-template-rows: 14px;
   pointer-events: none;
 }
@@ -306,51 +276,20 @@ button:focus-visible { outline: 2px solid #9e5532; outline-offset: 3px; }
   text-shadow: 0 1px 2px #183f36, 0 0 3px #183f36;
 }
 .cell {
-  min-width: 0; min-height: 0; padding: 0; border-radius: 5px;
-  border: 1px dashed #fff0c9e8;
-  background: #634e3d55; color: #f8ecd8ae;
-  font: 600 16px/1 var(--font);
+  min-width: 0; min-height: 0; padding: 0; border-radius: 4px;
+  border: 1px dashed transparent; background: transparent; color: transparent;
+  font: 600 15px/1 var(--font);
 }
-.cell.valid { background: #286155ba; border-color: #eaf6cb; color: #fffbe5; cursor: crosshair; }
+.cell.on-deck {
+  align-self: stretch;
+  border-color: #fdf2cdf0;
+  color: #fff8d9;
+  background: #1e564344;
+}
+.cell.valid { background: #286155b5; border-color: #f0f6d1; color: #fffbe5; cursor: crosshair; }
 .cell.preview { z-index: 2; border-color: #fff9dc; box-shadow: inset 0 0 0 2px #92cba5; }
-.cell.contract-cell { color: #ffefbc; border: 2px solid #ffdb84; box-shadow: inset 0 0 8px #b0672760; }
-.cell.hinting { color: #fff8de; background: #476b51; }
-.cabin {
-  --cabin-height: clamp(30px, calc(var(--cell) * .84), 53px);
-  position: absolute; z-index: 2; pointer-events: none;
-  top: calc(var(--seen-deck) * .53 - var(--cabin-height) * .87);
-  left: 50%; width: calc(var(--spine) - 4px); height: var(--cabin-height);
-  transform: translateX(-52%);
-  border-radius: 3px 3px 2px 2px; border: 1px solid #8e6c4f;
-  background: linear-gradient(100deg, #efd8a9, #fff1c9 52%, #dbc393);
-  box-shadow: 2px 3px #5848366b;
-}
-.cabin::before {
-  content: ""; position: absolute; z-index: 1; top: -5px; left: -3px; right: -3px; height: 7px;
-  border: 1px solid #924c3d; border-radius: 3px;
-  background: linear-gradient(#d77d62 0 45%, #b96750 46%);
-  box-shadow: 0 2px #97684d53;
-}
-.cabin::after {
-  content: ""; position: absolute; z-index: -1; top: 3px; left: 100%; bottom: 0; width: 4px;
-  background: #ac8d64; transform: skewY(-15deg); transform-origin: bottom left;
-}
-.cabin-window {
-  position: absolute; left: 16%; top: 18%; right: 16%; height: 33%;
-  border-radius: 2px; border: 1px solid #405f56;
-  background: linear-gradient(90deg, #477878 0 41%, #e8d3ac 42% 58%, #477878 59%);
-  box-shadow: inset 0 2px #c5dbc34a;
-}
-.cabin-flag {
-  position: absolute; left: 43%; top: -19px; width: 2px; height: 16px;
-  border-radius: 1px; background: #644e36;
-}
-.cabin-flag i {
-  position: absolute; left: 1px; top: 0; height: 8px; width: 18px;
-  background: #d96e56; clip-path: polygon(0 0, 100% 15%, 69% 52%, 100% 89%, 0 100%);
-  transform-origin: left center; animation: flutter 1.4s ease-in-out infinite alternate;
-}
-@keyframes flutter { to { transform: scaleX(.83) skewY(6deg); } }
+.cell.contract-cell { color: #ffefbc; border: 2px solid #ffdb84; background: #795b3675; }
+.cell.hinting { color: #fff8de; background: #476b51d9; }
 .trip-status {
   position: absolute; z-index: 9; left: 50%; bottom: 8px; transform: translateX(-50%);
   background: #f9efd6; border: 1px solid #b5aa83; border-radius: 8px; box-shadow: 0 3px 12px #183d3678;
@@ -414,8 +353,17 @@ button:focus-visible { outline: 2px solid #9e5532; outline-offset: 3px; }
 .piece.long { --a: #5d8286; --b: #436d73; --c: #35585d; --edge: #2b474c; }
 .piece.long::before { content: ""; position: absolute; inset: 9% 7%; border-inline: 2px solid #e5e9d580; border-block: 1px solid #293d394f; border-radius: 3px; pointer-events: none; }
 .piece.occupied {
-  pointer-events: auto; transform: translateZ(2px) rotateX(-10deg);
-  transform-origin: center bottom;
+  pointer-events: auto; overflow: visible;
+}
+.piece.occupied::before {
+  content: ""; position: absolute; top: -4px; left: 1px; right: -1px; height: 4px;
+  border: 1px solid var(--edge); border-bottom: 0; border-radius: 2px 2px 0 0;
+  background: var(--a); transform: skewX(-35deg); transform-origin: left bottom; pointer-events: none;
+}
+.piece.occupied::after {
+  content: ""; position: absolute; top: -3px; bottom: 1px; right: -4px; width: 3px;
+  border-right: 1px solid var(--edge); background: var(--c);
+  transform: skewY(-34deg); transform-origin: left bottom; pointer-events: none;
 }
 .piece b { font-size: clamp(14px, 2.4dvh + .8vw, 25px); font-weight: 900; line-height: 1; position: relative; }
 .piece em { position: absolute; right: 3px; bottom: 3px; background: #173f3a; color: #fff2d7; border-radius: 3px; font-size: 9px; font-style: normal; line-height: 1; padding: 2px 3px; }
@@ -484,7 +432,6 @@ dialog li+li { margin-top: 5px; }
   }
 }
 @media (max-height: 345px) and (orientation: landscape) {
-  .playfield { --deck-inset: 13px; --pitch: 34deg; --projection: .829; }
   .game { grid-template-rows: 40px minmax(0,1fr) 29px calc(58px + env(safe-area-inset-bottom)); }
   .hud { gap: 5px; padding-inline: max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right)); }
   .hud .quiet { min-height: 30px; min-width: 30px; padding-inline: 5px; }

@@ -59,6 +59,7 @@
   const piece = (id, root = $('screen')) => root.querySelector('[data-piece="' + id + '"]');
   const ship = () => R.inspect(level, run.places, run.ballast);
   const column = x => level.columns + x + 1;
+  const row = y => level.rows - y;
   const xy = button => button.dataset.cell.split(',').map(Number);
 
   function playSound(kind) {
@@ -153,20 +154,14 @@
 
   function validPlaces(item, places) {
     if (!Array.isArray(places) || places.length !== item.cargo.length) return false;
-    const checked = R.empty(item);
-    for (let id = 0; id < places.length; id++) {
-      const place = places[id];
-      if (!place) continue;
-      if (!Array.isArray(place) || place.length !== 3 || !place.every(Number.isInteger) ||
-          ![0, 1].includes(place[2]) || !R.fits(item, checked, id, place)) return false;
-      checked[id] = place;
-    }
-    return true;
+    const shape = places.every(place => place === null || (Array.isArray(place) && place.length === 3 &&
+      place.every(Number.isInteger) && [0, 1].includes(place[2])));
+    return shape && R.loadingOrder(item, places) !== null;
   }
 
   function restored(item) {
     const value = save.runs[item.id] || save.run;
-    if (value?.id !== item.id || !validPlaces(item, value.places)) return null;
+    if (value?.layout !== 2 || value.id !== item.id || !validPlaces(item, value.places)) return null;
     const normalizeBallast = ballast => [-1, 1].includes(ballast) && totalStars() >= 5 ? ballast : 0;
     const history = (Array.isArray(value.history) ? value.history : []).slice(-80)
       .filter(step => step && validPlaces(item, step.places))
@@ -179,7 +174,7 @@
 
   function persistRun() {
     const {id, places, adjustments, ballast, history} = run;
-    save.runs[id] = {id, places, adjustments, ballast, history:history.slice(-80)};
+    save.runs[id] = {id, layout:2, places, adjustments, ballast, history:history.slice(-80)};
     delete save.run;
     store();
   }
@@ -200,6 +195,7 @@
     persistRun();
     $('playfield').style.setProperty('--rows', level.rows);
     $('playfield').style.setProperty('--columns', level.columns);
+    $('playfield').style.setProperty('--bay-cap', [50, 55, 61, 58, 59][getChapter(id)] + 'px');
     $('dock').scrollLeft = 0;
     phase = 'arrive';
     setScreen('game');
@@ -231,8 +227,9 @@
     if (guide?.id === id) classes.push('hinting');
     if (state.fragile.has(id) || state.unlinked.has(id)) classes.push('conflict');
     const placement = occupied ? ' style="grid-column:' + column(place[0]) + '/span ' +
-      (c.kind === 'long' && !place[2] ? 2 : 1) + ';grid-row:' + (place[1]+1) + '/span ' +
-      (c.kind === 'long' && place[2] ? 2 : 1) + '"' : '';
+      (c.kind === 'long' && !place[2] ? 2 : 1) + ';grid-row:' +
+      (row(place[1]) - Number(c.kind === 'long' && place[2] === 1)) + '/span ' +
+      (c.kind === 'long' && place[2] ? 2 : 1) + '" data-tier="' + place[1] + '"' : '';
     return '<button type="button" class="' + classes.join(' ') + '" data-piece="' + id + '" aria-pressed="' +
       (selected === id) + '" aria-label="' + crateName(id) + '"' + placement + inactive + '>' + crateFace(id) + '</button>';
   }
@@ -247,10 +244,10 @@
         const isContract = level.contract?.x === x && level.contract?.y === y;
         const valid = selected !== null && R.fits(level,run.places,selected,[x,y,rotation]);
         const highlighted = guide?.place?.[0] === x && guide.place[1] === y;
-        const cls = ['cell', valid ? 'valid' : '', isContract ? 'contract-cell' : '', highlighted ? 'hinting' : ''];
+        const cls = ['cell', y === 0 ? 'on-deck' : 'upper-tier', valid ? 'valid' : '', isContract ? 'contract-cell' : '', highlighted ? 'hinting' : ''];
         const accessible = t('cell',{side:t(x<0?'leftSide':'rightSide'),row:y+1,arm});
         content += '<button class="' + cls.join(' ') + '" style="grid-column:' + column(x) + ';grid-row:' +
-          (y+1) + '" data-cell="' + x + ',' + y + '" aria-label="' + accessible + '"' + locked + '>' + (isContract ? '★' : '·') + '</button>';
+          row(y) + '" data-cell="' + x + ',' + y + '" aria-label="' + accessible + '"' + locked + '>' + (isContract ? '★' : '·') + '</button>';
       }
     }
     $('arms').innerHTML = arms;
@@ -293,7 +290,7 @@
     const initialGuide = level.id === 1 && run.adjustments === 0 && hintStage !== 1;
     const contractGuide = hintStage === 2 && state.ready && !!level.contract && !state.contractMet;
     const guide = !phase && (contractGuide || !state.ready && (hintStage === 2 || initialGuide))
-      ? R.hint(level, run.places, contractGuide) : null;
+      ? R.hint(level, run.places) : null;
     const locked = phase ? ' disabled' : '';
     const oldScroll = $('dock').scrollLeft;
     const imbalance = state.right - state.left;
@@ -350,6 +347,7 @@
     if (level.intro === 'glass') return 'hintGlass';
     if (level.intro === 'pair') return 'hintPair';
     if (level.intro === 'long') return 'hintLong';
+    if (level.intro === 'lever' || level.intro === 'deck' || level.intro === 'four') return 'hintStack';
     return level.lever ? 'hintLever' : 'hintBasic';
   }
 
@@ -359,8 +357,7 @@
     hintStage = hintStage < 2 ? hintStage + 1 : 0;
     renderGame();
     if (hintStage === 2) {
-      const current = ship();
-      const move = R.hint(level,run.places,current.ready && !!level.contract && !current.contractMet);
+      const move = R.hint(level, run.places);
       if (move && !run.places[move.id]) revealDockPiece(move.id);
     }
     playSound('select');
@@ -422,8 +419,13 @@
     if (phase || id === null || !level.cargo[id]) return false;
     const prior = run.places[id];
     if (R.same(prior, next)) return false;
+    if (prior && !R.canLift(level,run.places,id)) {
+      fact('removeTop', true);
+      renderGame();
+      return false;
+    }
     if (next && !R.fits(level,run.places,id,next)) {
-      fact('fitError', true);
+      fact(next[1] > 0 ? 'needsSupport' : 'fitError', true);
       renderGame();
       return false;
     }
