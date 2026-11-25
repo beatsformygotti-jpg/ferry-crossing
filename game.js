@@ -51,9 +51,8 @@
 
   const title = item => item.title[save.lang === 'en' ? 1 : 0];
   const cleared = id => Object.hasOwn(save.scores, id);
-  const unlocked = id => id === 1 || cleared(id - 1) || cleared(id);
   const totalStars = () => levels.reduce((sum, item) => sum + (save.scores[item.id] || 0), 0);
-  const nextUncleared = () => levels.find(item => !cleared(item.id) && unlocked(item.id))?.id;
+  const nextUncleared = () => levels.find(item => !cleared(item.id))?.id;
   const getChapter = id => chapterStarts.slice(0, -1).findLastIndex(start => id >= start);
   const delay = ms => new Promise(resolve => setTimeout(resolve, reduced.matches ? 14 : ms));
   const bounds = el => el?.getBoundingClientRect();
@@ -145,12 +144,11 @@
     $('levels').innerHTML = levels.slice(first - 1, last - 1).map(item => {
       const done = cleared(item.id);
       const stars = save.scores[item.id] || 0;
-      const available = unlocked(item.id);
       return '<button class="level-button' + (item.id === save.current ? ' current' : '') + '" data-level="' + item.id + '" aria-label="' +
-        item.id + '. ' + title(item) + '"' + (!available ? ' disabled' : '') + '><span>' + item.id + '</span>' +
-        '<small aria-hidden="true">' + (done ? stars ? '★'.repeat(stars) + '☆'.repeat(3-stars) : '✓' : !available ? '•' : '&nbsp;') + '</small></button>';
+        item.id + '. ' + title(item) + '"><span>' + item.id + '</span>' +
+        '<small aria-hidden="true">' + (done ? stars ? '★'.repeat(stars) + '☆'.repeat(3-stars) : '✓' : '&nbsp;') + '</small></button>';
     }).join('');
-    $('map-note').textContent = !unlocked(first) ? t('mapLocked') : totalStars() >= 5 ? t('mapBallast') : t('mapStars',{n:totalStars()});
+    $('map-note').textContent = totalStars() >= 5 ? t('mapBallast') : t('mapStars',{n:totalStars()});
   }
 
   function validPlaces(item, places) {
@@ -187,7 +185,7 @@
   }
 
   async function openLevel(id, fresh = false) {
-    if (!unlocked(id)) return;
+    if (!levels[id - 1]) return;
     closeDialog();
     level = levels[id - 1];
     run = (!fresh && restored(level)) || { id, places:R.empty(level), history:[], adjustments:0, ballast:0 };
@@ -548,7 +546,7 @@
     const before = totalStars();
     const stars = R.starCount(level,ready,run.adjustments,run.ballast);
     save.scores[level.id] = Math.max(save.scores[level.id] || 0, stars);
-    save.current = nextUncleared() || level.id;
+    save.current = levels[level.id]?.id || nextUncleared() || level.id;
     delete save.runs[level.id];
     result = { stars, ballastUnlocked:before < 5 && totalStars() >= 5 };
     store();
